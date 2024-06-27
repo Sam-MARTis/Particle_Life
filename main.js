@@ -9,6 +9,7 @@ const TREE_CAPACITY = 4;
 const DISTANCE_SCALE = 100;
 const BUFFER_SIZE = 3;
 const TIME_STEP = 0.1;
+const POINTS_COUNT = 100;
 class Arena {
     constructor(_x, _y, _width, _height, _viscosity, _objects = []) {
         this.addPoint = (point) => {
@@ -26,6 +27,10 @@ class Arena {
             }
         };
         this.updateAll = (dt) => {
+            this.tree = new QuadTree(0, 0, this.width, this.height, TREE_CAPACITY);
+            this.objects.forEach((point) => {
+                this.tree.addPoint(point);
+            });
             this.objects.forEach((point) => {
                 this.updateForcesAndCollisionOfSingleParticle(point);
             });
@@ -49,7 +54,7 @@ class Point {
             const coefficient = this.interactionMatrix[this.type][other.type];
             const dx = other.x - this.x;
             const dy = other.y - this.y;
-            const distanceSquared = (dx ** 2 + dy ** 2) / (this.distanceStep ** 2);
+            const distanceSquared = (dx ** 2 + dy ** 2) / this.distanceStep ** 2;
             if (distanceSquared == 0)
                 return;
             const angle = Math.atan2(dy, dx);
@@ -72,7 +77,7 @@ class Point {
             const distanceSquared = dx ** 2 + dy ** 2;
             if (distanceSquared == 0)
                 return;
-            if (distanceSquared <= ((this.size + BUFFER_SIZE) ** 2)) {
+            if (distanceSquared <= (this.size + BUFFER_SIZE) ** 2) {
                 const angle = Math.atan2(dy, dx);
                 const overlap = this.size + BUFFER_SIZE - Math.sqrt(distanceSquared);
                 this.x -= (overlap * Math.cos(angle)) / 2;
@@ -106,11 +111,30 @@ const widthMain = window.innerWidth * devicePixelRatio;
 const heightMain = window.innerHeight * devicePixelRatio;
 canvas.width = widthMain;
 canvas.height = heightMain;
+const arena = new Arena(0, 0, widthMain, heightMain, VISCOSITY, []);
+const pointsArray = [];
+const renderFunction = () => {
+    ctx.clearRect(0, 0, widthMain, heightMain);
+};
+const main = () => {
+    //Create Aerna.
+    //Add particles
+    //Call animation to update particles
+    for (let i = 0; i < POINTS_COUNT; i++) {
+        const pointNew = new Point(1, 1, Math.random() * widthMain, Math.random() * heightMain, 0, 0, 0, arena, DISTANCE_SCALE, INTERACTION_MATRIX);
+        arena.addPoint(pointNew);
+        pointsArray.push(pointNew);
+    }
+    renderFunction();
+};
+/*
+//Testing
 const f1 = new Arena(0, 0, 1000, 1000, VISCOSITY, []);
 const p1 = new Point(1, 1, 200, 300, 0, 0, 0, f1, 300, INTERACTION_MATRIX);
 const p2 = new Point(1, 1, 200, 600, 0, 0, 0, f1, 300, INTERACTION_MATRIX);
 p1.addForceInteractionOfParticle(p2);
 console.log(p1.force);
+*/
 const getMousePos = (canvas, event) => {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
@@ -120,8 +144,10 @@ const getMousePos = (canvas, event) => {
         y: (event.clientY - rect.top) * scaleY,
     };
 };
-addEventListener("mousemove", (e) => {
-    const p = new Point(1, 1, 200, 300, 0, 0, 0, f1, 300, INTERACTION_MATRIX);
-    p.addForceInteractionOfParticle(new Point(1, 1, e.offsetX, e.offsetY, 0, 0, 0, f1, 300, INTERACTION_MATRIX));
-    console.log(p.force, e.offsetX, e.offsetY);
-});
+// addEventListener("mousemove", (e) => {
+//   // const p = new Point(1, 1, 200, 300, 0, 0, 0, f1, 300, INTERACTION_MATRIX);
+//   // p.addForceInteractionOfParticle(
+//   //   new Point(1, 1, e.offsetX, e.offsetY, 0, 0, 0, f1, 300, INTERACTION_MATRIX)
+//   // );
+//   // console.log(p.force, e.offsetX, e.offsetY);
+// });
