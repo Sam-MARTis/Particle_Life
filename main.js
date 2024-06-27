@@ -9,7 +9,7 @@ const TREE_CAPACITY = 4;
 const DISTANCE_SCALE = 100;
 const BUFFER_SIZE = 3;
 const TIME_STEP = 0.1;
-class Fluid {
+class Arena {
     constructor(_x, _y, _width, _height, _viscosity, _objects = []) {
         this.addPoint = (point) => {
             this.objects.push(point);
@@ -25,12 +25,12 @@ class Fluid {
                 point.addForceInteractionOfParticle(other);
             }
         };
-        this.updateAll = () => {
+        this.updateAll = (dt) => {
             this.objects.forEach((point) => {
                 this.updateForcesAndCollisionOfSingleParticle(point);
             });
             this.objects.forEach((point) => {
-                point.update(TIME_STEP);
+                point.update(dt);
             });
         };
         this.viscosity = _viscosity;
@@ -44,7 +44,7 @@ class Fluid {
     }
 }
 class Point {
-    constructor(_mass, _size, _x, _y, _vx, _vy, _type, _fluid, _distanceStep, _interactionMatrix) {
+    constructor(_mass, _size, _x, _y, _vx, _vy, _type, _arena, _distanceStep, _interactionMatrix) {
         this.addForceInteractionOfParticle = (other) => {
             const coefficient = this.interactionMatrix[this.type][other.type];
             const dx = other.x - this.x;
@@ -88,17 +88,38 @@ class Point {
         this.vx = _vx;
         this.vy = _vy;
         this.type = _type;
-        this.fluid = _fluid;
+        this.arena = _arena;
         this.force = [0, 0];
         this.distanceStep = _distanceStep;
         this.interactionMatrix = _interactionMatrix;
     }
 }
-const f1 = new Fluid(0, 0, 1000, 1000, VISCOSITY, []);
+const canvas = document.getElementById("projectCanvas");
+if (!(canvas instanceof HTMLCanvasElement)) {
+    throw new Error("Canvas not found");
+}
+const ctx = canvas.getContext("2d");
+if (!ctx) {
+    throw new Error("Context not found");
+}
+const widthMain = window.innerWidth * devicePixelRatio;
+const heightMain = window.innerHeight * devicePixelRatio;
+canvas.width = widthMain;
+canvas.height = heightMain;
+const f1 = new Arena(0, 0, 1000, 1000, VISCOSITY, []);
 const p1 = new Point(1, 1, 200, 300, 0, 0, 0, f1, 300, INTERACTION_MATRIX);
 const p2 = new Point(1, 1, 200, 600, 0, 0, 0, f1, 300, INTERACTION_MATRIX);
 p1.addForceInteractionOfParticle(p2);
 console.log(p1.force);
+const getMousePos = (canvas, event) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+        x: (event.clientX - rect.left) * scaleX,
+        y: (event.clientY - rect.top) * scaleY,
+    };
+};
 addEventListener("mousemove", (e) => {
     const p = new Point(1, 1, 200, 300, 0, 0, 0, f1, 300, INTERACTION_MATRIX);
     p.addForceInteractionOfParticle(new Point(1, 1, e.offsetX, e.offsetY, 0, 0, 0, f1, 300, INTERACTION_MATRIX));

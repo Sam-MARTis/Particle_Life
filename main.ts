@@ -10,7 +10,7 @@ const DISTANCE_SCALE = 100;
 const BUFFER_SIZE = 3;
 const TIME_STEP = 0.1;
 
-class Fluid {
+class Arena {
   x: number;
   y: number;
   width: number;
@@ -69,12 +69,12 @@ class Fluid {
 
   };
 
-  updateAll = (): void => {
+  updateAll = (dt: number): void => {
     this.objects.forEach((point) => {
       this.updateForcesAndCollisionOfSingleParticle(point);
     });
     this.objects.forEach((point) => {
-      point.update(TIME_STEP);
+      point.update(dt);
     });
   
   }
@@ -89,7 +89,7 @@ class Point {
   vy: number;
   type: number;
   force: [number, number];
-  fluid: Fluid;
+  arena: Arena;
   interactionMatrix: number[][];
   distanceStep: number;
 
@@ -102,7 +102,7 @@ class Point {
     _vx: number,
     _vy: number,
     _type: number,
-    _fluid: Fluid,
+    _arena: Arena,
     _distanceStep: number,
     _interactionMatrix: number[][]
   ) {
@@ -113,7 +113,7 @@ class Point {
     this.vx = _vx;
     this.vy = _vy;
     this.type = _type;
-    this.fluid = _fluid;
+    this.arena = _arena;
     this.force = [0, 0];
     this.distanceStep = _distanceStep;
     this.interactionMatrix = _interactionMatrix;
@@ -156,14 +156,43 @@ class Point {
   };
 }
 
-const f1 = new Fluid(0, 0, 1000, 1000, VISCOSITY, []);
+
+const canvas = document.getElementById("projectCanvas");
+if (!(canvas instanceof HTMLCanvasElement)) {
+  throw new Error("Canvas not found");
+}
+const ctx = canvas.getContext("2d");
+if (!ctx) {
+  throw new Error("Context not found");
+}
+
+const widthMain = window.innerWidth * devicePixelRatio;
+const heightMain = window.innerHeight * devicePixelRatio; 
+canvas.width = widthMain;
+canvas.height = heightMain;
+
+
+
+
+
+
+const f1 = new Arena(0, 0, 1000, 1000, VISCOSITY, []);
 const p1 = new Point(1, 1, 200, 300, 0, 0, 0, f1, 300, INTERACTION_MATRIX);
 const p2 = new Point(1, 1, 200, 600, 0, 0, 0, f1, 300, INTERACTION_MATRIX);
 p1.addForceInteractionOfParticle(p2);
 console.log(p1.force);
 
 
+const getMousePos = (canvas: HTMLCanvasElement, event: MouseEvent) => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
 
+  return {
+    x: (event.clientX - rect.left) * scaleX,
+    y: (event.clientY - rect.top) * scaleY,
+  };
+};
 
 
 addEventListener("mousemove", (e) => {
