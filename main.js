@@ -1,15 +1,21 @@
 "use strict";
 const INTERACTION_MATRIX = [
+    [-5, 1],
     [-1, 2],
-    [-2, 1],
 ];
-const FORCE_MULTIPLIER = 30;
-const VISCOSITY = 0.1;
-const TREE_CAPACITY = 4;
-const DISTANCE_SCALE = 100;
+const FORCE_MULTIPLIER = 0.1;
+const VISCOSITY = 1;
+const TREE_CAPACITY = 2;
+const DISTANCE_SCALE = 5;
 const BUFFER_SIZE = 3;
 const TIME_STEP = 0.1;
 const POINTS_COUNT = 100;
+const PARTICLE_SIZE = 5;
+const SEARCH_RANGE_MULTIPLIER = 50;
+const MAX_FORCE = 1;
+const MAX_VELOCITY = 2;
+const COLLISION_RANGE_MULTIPLIER = 3;
+const MASS_OF_PARTICLES = 10;
 class Arena {
     constructor(_x, _y, _width, _height, _viscosity, _objects = []) {
         this.addPoint = (point) => {
@@ -17,7 +23,7 @@ class Arena {
             this.tree.addPoint(point);
         };
         this.updateForcesAndCollisionOfSingleParticle = (point) => {
-            const pointsToCheckForForce = this.tree.queryTree(point.x - 3 * DISTANCE_SCALE, point.y - 3 * DISTANCE_SCALE, point.x + 3 * DISTANCE_SCALE, point.y + 3 * DISTANCE_SCALE);
+            const pointsToCheckForForce = this.tree.queryTree(point.x - SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE, point.y - SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE, point.x + SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE, point.y + SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE);
             const pointsToCheckForCollision = this.tree.queryTree(point.x - 2 * point.size, point.y - 2 * point.size, point.x + 2 * point.size, point.y + 2 * point.size);
             for (const other of pointsToCheckForCollision) {
                 point.handleCollision(other);
@@ -58,17 +64,56 @@ class Point {
             if (distanceSquared == 0)
                 return;
             const angle = Math.atan2(dy, dx);
-            const force = coefficient / distanceSquared;
+            let force = coefficient / distanceSquared;
+            force = force > MAX_FORCE ? MAX_FORCE : force;
             this.force[0] += force * Math.cos(angle);
             this.force[1] += force * Math.sin(angle);
+            this.force[0] = this.force[0] > MAX_FORCE ? MAX_FORCE : this.force[0];
+            this.force[1] = this.force[1] > MAX_FORCE ? MAX_FORCE : this.force[1];
         };
         this.update = (dt) => {
-            this.x += (this.vx / 2) * dt;
-            this.y += (this.vy / 2) * dt;
+            this.force[0] -= this.vx * VISCOSITY;
+            this.force[1] -= this.vy * VISCOSITY;
             this.vx += (this.force[0] * dt) / this.mass;
             this.vy += (this.force[1] * dt) / this.mass;
-            this.x += (this.vx / 2) * dt;
-            this.y += (this.vy / 2) * dt;
+            if (this.vx > MAX_VELOCITY) {
+                this.vx = MAX_VELOCITY;
+            }
+            if (this.vy > MAX_VELOCITY) {
+                this.vy = MAX_VELOCITY;
+            }
+            if (this.vx < -MAX_VELOCITY) {
+                this.vx = -MAX_VELOCITY;
+            }
+            if (this.vy < -MAX_VELOCITY) {
+                this.vy = -MAX_VELOCITY;
+            }
+            // this.x += (this.vx / 2) * dt;
+            // this.y += (this.vy / 2) * dt;
+            this.x += (this.vx) * dt;
+            this.y += (this.vy) * dt;
+            this.vx = this.vx > MAX_VELOCITY ? MAX_VELOCITY : this.vx;
+            this.vy = this.vy > MAX_VELOCITY ? MAX_VELOCITY : this.vy;
+            if (this.x > widthMain - 5 * PARTICLE_SIZE) {
+                this.x = widthMain - 5 * PARTICLE_SIZE;
+                this.vx *= -1;
+            }
+            if (this.x < 5 * PARTICLE_SIZE) {
+                this.x = 5 * PARTICLE_SIZE;
+                this.vx *= -1;
+            }
+            if (this.y > heightMain - 5 * PARTICLE_SIZE) {
+                this.y = heightMain - 5 * PARTICLE_SIZE;
+                this.vy *= -1;
+            }
+            if (this.y < 5 * PARTICLE_SIZE) {
+                this.y = 5 * PARTICLE_SIZE;
+                this.vy *= -1;
+            }
+            // this.x = this.x<0?0:this.x;
+            // this.y = this.y<0?0:this.y;
+            // this.x = this.x>(widthMain-1)?(widthMain-1):this.x
+            // this.y = this.y>(heightMain-1)?(heightMain-1):this.y
             this.force = [0, 0];
         };
         this.handleCollision = (other) => {
@@ -113,19 +158,46 @@ canvas.width = widthMain;
 canvas.height = heightMain;
 const arena = new Arena(0, 0, widthMain, heightMain, VISCOSITY, []);
 const pointsArray = [];
+const drawTree = (tree) => {
+    ctx.beginPath();
+    ctx.strokeStyle = "white";
+    ctx.rect(tree.x, tree.y, tree.width, tree.height);
+    ctx.stroke();
+    if (tree.divided) {
+        tree.subTrees.forEach((subTree) => {
+            drawTree(subTree);
+        });
+    }
+};
 const renderFunction = () => {
     ctx.clearRect(0, 0, widthMain, heightMain);
+    for (const point of pointsArray) {
+        ctx.fillStyle = point.type ? "green" : "red";
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, point.size, 0, 2 * 3.1416);
+        ctx.fill();
+    }
+    drawTree(arena.tree);
 };
-const main = () => {
+let timeNow = performance.now();
+const mainLoop = () => {
+    const newTime = performance.now();
+    arena.updateAll(newTime - timeNow);
+    timeNow = newTime;
+    renderFunction();
+    requestAnimationFrame(mainLoop);
+};
+const setup = () => {
     //Create Aerna.
     //Add particles
     //Call animation to update particles
     for (let i = 0; i < POINTS_COUNT; i++) {
-        const pointNew = new Point(1, 1, Math.random() * widthMain, Math.random() * heightMain, 0, 0, 0, arena, DISTANCE_SCALE, INTERACTION_MATRIX);
+        const pointNew = new Point(MASS_OF_PARTICLES, PARTICLE_SIZE, Math.random() * widthMain, Math.random() * heightMain, 0, 0, Math.round(Math.random()), arena, DISTANCE_SCALE, INTERACTION_MATRIX);
         arena.addPoint(pointNew);
         pointsArray.push(pointNew);
     }
-    renderFunction();
+    timeNow = performance.now();
+    mainLoop();
 };
 /*
 //Testing
@@ -135,6 +207,7 @@ const p2 = new Point(1, 1, 200, 600, 0, 0, 0, f1, 300, INTERACTION_MATRIX);
 p1.addForceInteractionOfParticle(p2);
 console.log(p1.force);
 */
+setup();
 const getMousePos = (canvas, event) => {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
@@ -144,10 +217,3 @@ const getMousePos = (canvas, event) => {
         y: (event.clientY - rect.top) * scaleY,
     };
 };
-// addEventListener("mousemove", (e) => {
-//   // const p = new Point(1, 1, 200, 300, 0, 0, 0, f1, 300, INTERACTION_MATRIX);
-//   // p.addForceInteractionOfParticle(
-//   //   new Point(1, 1, e.offsetX, e.offsetY, 0, 0, 0, f1, 300, INTERACTION_MATRIX)
-//   // );
-//   // console.log(p.force, e.offsetX, e.offsetY);
-// });
