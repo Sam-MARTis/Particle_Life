@@ -43,6 +43,16 @@ class Point {
     this.distanceStep = _distanceStep;
     this.interactionMatrix = _interactionMatrix;
   }
+  findInteractionOfParticle = (other: Point) => {
+    let coefficient = this.interactionMatrix[this.type][other.type];
+    let dx = other.position[0] - this.position[0];
+    let dy = other.position[1] - this.position[0];
+    let distanceSquared = (dx**2) + (dy**2);
+    let angle = Math.atan2(dy, dx);
+    let force = coefficient/distanceSquared
+    this.force[0] += force*Math.cos(angle);
+    this.force[1] += force*Math.sin(angle);
+  };
 
 
 }
