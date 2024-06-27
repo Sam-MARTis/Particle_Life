@@ -1,19 +1,19 @@
 "use strict";
 const INTERACTION_MATRIX = [
-    [1, 1],
+    [1, 10],
     [-10, 5],
 ];
 const FORCE_MULTIPLIER = 0.1;
-const VISCOSITY = 10;
+const VISCOSITY = 0;
 const TREE_CAPACITY = 4;
 const DISTANCE_SCALE = 5;
-const BUFFER_SIZE = 0;
-const TIME_STEP = 0.01;
-const POINTS_COUNT = 100;
+const BUFFER_SIZE = 1;
+const TIME_STEP = 0.001;
+const POINTS_COUNT = 700;
 const PARTICLE_SIZE = 5;
 const SEARCH_RANGE_MULTIPLIER = 50;
 const MAX_FORCE = 1;
-const MAX_VELOCITY = 1;
+const MAX_VELOCITY = 0.1;
 const COLLISION_RANGE_MULTIPLIER = 3;
 const MASS_OF_PARTICLES = 100;
 class Arena {
@@ -23,13 +23,17 @@ class Arena {
             this.tree.addPoint(point);
         };
         this.updateForcesAndCollisionOfSingleParticle = (point) => {
-            const pointsToCheckForForce = this.tree.queryTree(point.x - SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE, point.y - SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE, point.x + SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE, point.y + SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE);
+            const x1 = point.x - SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE;
+            const y1 = point.y - SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE;
+            const x2 = point.x + SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE;
+            const y2 = point.y + SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE;
+            const pointsToCheckForForce = this.tree.queryTree(x1, y1, x2, y2);
             for (const other of pointsToCheckForForce) {
                 point.addForceInteractionOfParticle(other);
             }
         };
         this.updateAll = (dt) => {
-            this.tree = new QuadTree(0, 0, this.width, this.height, TREE_CAPACITY);
+            this.tree = new QuadTree(0, 0, Math.max(this.width, this.height), Math.max(this.width, this.height), TREE_CAPACITY);
             this.objects.forEach((point) => {
                 this.tree.addPoint(point);
             });
@@ -60,8 +64,13 @@ class Point {
     constructor(_mass, _size, _x, _y, _vx, _vy, _type, _arena, _distanceStep, _interactionMatrix) {
         this.addForceInteractionOfParticle = (other) => {
             const coefficient = this.interactionMatrix[this.type][other.type];
-            const dx = other.x - this.x;
-            const dy = other.y - this.y;
+            let dx = other.x - this.x;
+            const dxVals = [dx - widthMain, dx, dx + widthMain];
+            dx = dxVals.reduce((min, current) => Math.abs(current) < Math.abs(min) ? current : min);
+            // const dx = Math.max(other.x - this.x, );
+            let dy = other.y - this.y;
+            const dyVals = [dy - widthMain, dy, dy + widthMain];
+            dy = dyVals.reduce((min, current) => Math.abs(current) < Math.abs(min) ? current : min);
             const distanceSquared = (dx ** 2 + dy ** 2) / this.distanceStep ** 2;
             if (distanceSquared == 0)
                 return;
@@ -96,20 +105,20 @@ class Point {
             this.y += (this.vy) * dt;
             this.vx = this.vx > MAX_VELOCITY ? MAX_VELOCITY : this.vx;
             this.vy = this.vy > MAX_VELOCITY ? MAX_VELOCITY : this.vy;
-            if (this.x > widthMain - 1) {
-                this.x = 1;
+            if (this.x > widthMain) {
+                this.x = 0;
                 // this.vx *= -1;
             }
             if (this.x < 0) {
-                this.x = widthMain - 2;
+                this.x = widthMain - 1;
                 // this.vx *= -1;
             }
-            if (this.y > heightMain - 1) {
-                this.y = 1;
+            if (this.y > heightMain) {
+                this.y = 0;
                 // this.vy *= -1;
             }
             if (this.y < 0) {
-                this.y = heightMain - 2;
+                this.y = heightMain - 1;
                 // this.vy *= -1;
             }
             // this.x = this.x<0?0:this.x;
@@ -179,7 +188,7 @@ const renderFunction = () => {
         ctx.arc(point.x, point.y, point.size, 0, 2 * 3.1416);
         ctx.fill();
     }
-    drawTree(arena.tree);
+    // drawTree(arena.tree);
 };
 let timeNow = performance.now();
 const mainLoop = () => {
