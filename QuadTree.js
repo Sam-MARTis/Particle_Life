@@ -53,6 +53,7 @@ class QuadTree {
                         }
                     }
                 }
+                console.warn(point.x, point.y);
                 throw new Error("Point not in sub trees");
             }
         };
@@ -66,7 +67,7 @@ class QuadTree {
             let x2 = this.x + this.width;
             let y1 = this.y;
             let y2 = this.y + this.height;
-            return x2 >= rx1 && x1 <= rx2 && y1 <= ry2 && y2 >= ry1;
+            return x2 > rx1 && x1 <= rx2 && y1 < ry2 && y2 >= ry1;
         };
         this.queryTree = (rx1, ry1, rx2, ry2) => {
             if (!this.doesIntersect(rx1, ry1, rx2, ry2)) {

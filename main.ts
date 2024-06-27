@@ -1,21 +1,21 @@
 const INTERACTION_MATRIX = [
-  [-5, 1],
-  [-1, 2],
+  [1, 1],
+  [-10, 5],
 ];
 
 const FORCE_MULTIPLIER = 0.1;
-const VISCOSITY = 1;
-const TREE_CAPACITY = 2;
+const VISCOSITY = 10;
+const TREE_CAPACITY = 4;
 const DISTANCE_SCALE = 5;
-const BUFFER_SIZE = 3;
-const TIME_STEP = 0.1;
+const BUFFER_SIZE = 0;
+const TIME_STEP = 0.01;
 const POINTS_COUNT = 100;
 const PARTICLE_SIZE = 5;
 const SEARCH_RANGE_MULTIPLIER = 50;
 const MAX_FORCE = 1;
-const MAX_VELOCITY = 2;
+const MAX_VELOCITY = 1;
 const COLLISION_RANGE_MULTIPLIER = 3;
-const MASS_OF_PARTICLES = 10;
+const MASS_OF_PARTICLES = 100;
 
 class Arena {
   x: number;
@@ -60,22 +60,14 @@ class Arena {
       point.x + SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE,
       point.y + SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE
     );
-    const pointsToCheckForCollision = this.tree.queryTree(
-      point.x - 2 * point.size,
-      point.y - 2 * point.size,
-      point.x + 2 * point.size,
-      point.y + 2 * point.size
-    );
-    for (const other of pointsToCheckForCollision) {
-      point.handleCollision(other);
-    }
-
+    
     for (const other of pointsToCheckForForce) {
       point.addForceInteractionOfParticle(other);
     }
   };
 
   updateAll = (dt: number): void => {
+    
     this.tree = new QuadTree(0, 0, this.width, this.height, TREE_CAPACITY);
     this.objects.forEach((point) => {
       this.tree.addPoint(point);
@@ -86,6 +78,19 @@ class Arena {
     this.objects.forEach((point) => {
       point.update(dt);
     });
+    this.objects.forEach((point) => {
+      const pointsToCheckForCollision = this.tree.queryTree(
+        point.x - 2 * point.size,
+        point.y - 2 * point.size,
+        point.x + 2 * point.size,
+        point.y + 2 * point.size
+      );
+      
+      pointsToCheckForCollision.forEach((other) =>{
+        point.handleCollision(other);
+      })
+    })
+
   };
 }
 
@@ -168,21 +173,21 @@ class Point {
     this.y += (this.vy ) * dt;
     this.vx = this.vx > MAX_VELOCITY ? MAX_VELOCITY : this.vx;
     this.vy = this.vy > MAX_VELOCITY ? MAX_VELOCITY : this.vy;
-    if (this.x > widthMain - 5*PARTICLE_SIZE) {
-      this.x = widthMain - 5*PARTICLE_SIZE;
-      this.vx *= -1;
+    if (this.x > widthMain -1) {
+      this.x = 1;
+      // this.vx *= -1;
     }
-    if (this.x < 5*PARTICLE_SIZE) {
-      this.x = 5*PARTICLE_SIZE;
-      this.vx *= -1;
+    if (this.x < 0) {
+      this.x = widthMain - 2;
+      // this.vx *= -1;
     }
-    if (this.y > heightMain - 5*PARTICLE_SIZE) {
-      this.y = heightMain - 5*PARTICLE_SIZE;
-      this.vy *= -1;
+    if (this.y > heightMain - 1) {
+      this.y = 1;
+      // this.vy *= -1;
     }
-    if (this.y < 5*PARTICLE_SIZE) {
-      this.y = 5*PARTICLE_SIZE;
-      this.vy *= -1;
+    if (this.y < 0) {
+      this.y = heightMain - 2;
+      // this.vy *= -1;
     }
 
     // this.x = this.x<0?0:this.x;
@@ -198,13 +203,13 @@ class Point {
     const dy = other.y - this.y;
     const distanceSquared = dx ** 2 + dy ** 2;
     if (distanceSquared == 0) return;
-    if (distanceSquared <= (this.size + BUFFER_SIZE) ** 2) {
+    if (distanceSquared <= ((this.size + other.size + 2) ** 2)){
       const angle = Math.atan2(dy, dx);
-      const overlap = this.size + BUFFER_SIZE - Math.sqrt(distanceSquared);
-      this.x -= (overlap * Math.cos(angle)) / 2;
-      this.y -= (overlap * Math.sin(angle)) / 2;
-      other.x += (overlap * Math.cos(angle)) / 2;
-      other.y += (overlap * Math.sin(angle)) / 2;
+      const overlap = 2*this.size - Math.sqrt(distanceSquared) + BUFFER_SIZE;
+      this.x -= 0.5*(overlap * Math.cos(angle));
+      this.y -= 0.5*(overlap * Math.sin(angle));
+      other.x +=0.5* (overlap * Math.cos(angle));
+      other.y +=0.5* (overlap * Math.sin(angle));
     }
   };
 }
