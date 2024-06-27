@@ -166,26 +166,29 @@ class Point {
     this.force[1] -= this.vy * VISCOSITY;
     this.vx += (this.force[0] * dt) / this.mass;
     this.vy += (this.force[1] * dt) / this.mass;
-    if (this.vx > MAX_VELOCITY) {
-      this.vx = MAX_VELOCITY;
+    if(this.vx**2 + this.vy**2 > MAX_VELOCITY**2){
+      const angle = Math.atan2(this.vy, this.vx);
+      this.vx = MAX_VELOCITY * Math.cos(angle);
+      this.vy = MAX_VELOCITY * Math.sin(angle);
     }
-    if (this.vy > MAX_VELOCITY) {
-      this.vy = MAX_VELOCITY;
-    }
-    if (this.vx < -MAX_VELOCITY) {
-      this.vx = -MAX_VELOCITY;
-    }
-    if (this.vy < -MAX_VELOCITY) {
-      this.vy = -MAX_VELOCITY;
-    }
+    // if (this.vx > MAX_VELOCITY) {
+    //   this.vx = MAX_VELOCITY;
+    // }
+    // if (this.vy > MAX_VELOCITY) {
+    //   this.vy = MAX_VELOCITY;
+    // }
+    // if (this.vx < -MAX_VELOCITY) {
+    //   this.vx = -MAX_VELOCITY;
+    // }
+    // if (this.vy < -MAX_VELOCITY) {
+    //   this.vy = -MAX_VELOCITY;
+    // }
 
     // this.x += (this.vx / 2) * dt;
     // this.y += (this.vy / 2) * dt;
 
     this.x += (this.vx ) * dt;
     this.y += (this.vy ) * dt;
-    this.vx = this.vx > MAX_VELOCITY ? MAX_VELOCITY : this.vx;
-    this.vy = this.vy > MAX_VELOCITY ? MAX_VELOCITY : this.vy;
     if (this.x > widthMain) {
       this.x = 0;
       // this.vx *= -1;
@@ -263,7 +266,7 @@ const renderFunction = () => {
     ctx.arc(point.x, point.y, point.size, 0, 2 * 3.1416);
     ctx.fill();
   }
-  // drawTree(arena.tree);
+  drawTree(arena.tree);
 };
 let timeNow = performance.now();
 const mainLoop = (): void => {
