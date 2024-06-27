@@ -12,20 +12,24 @@ class Fluid {
     }
 }
 class Point {
-    constructor(_position, _mass, _velocity, _type, _fluid, _distanceStep, _interactionMatrix) {
+    constructor(_mass, _x, _y, _vx, _vy, _type, _fluid, _distanceStep, _interactionMatrix) {
         this.findInteractionOfParticle = (other) => {
             let coefficient = this.interactionMatrix[this.type][other.type];
-            let dx = other.position[0] - this.position[0];
-            let dy = other.position[1] - this.position[0];
-            let distanceSquared = (dx ** 2) + (dy ** 2);
+            let dx = other.x - this.x;
+            let dy = other.y - this.y;
+            let distanceSquared = dx ** 2 + dy ** 2 / this.distanceStep ** 2;
+            if (distanceSquared == 0)
+                return;
             let angle = Math.atan2(dy, dx);
             let force = coefficient / distanceSquared;
             this.force[0] += force * Math.cos(angle);
             this.force[1] += force * Math.sin(angle);
         };
-        this.position = _position;
+        this.x = _x;
+        this.y = _y;
         this.mass = _mass;
-        this.velocity = _velocity;
+        this.vx = _vx;
+        this.vy = _vy;
         this.type = _type;
         this.fluid = _fluid;
         this.force = [0, 0];
