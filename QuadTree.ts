@@ -117,6 +117,11 @@ class QuadTree {
       throw new Error("Point not in sub trees");
     }
   };
+  addPoints = (pointList: Point[]): void => {
+    pointList.forEach(point => {
+      this.addPoint(point)
+    })
+  }
 
   doesIntersect = (
     rx1: number,

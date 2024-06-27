@@ -56,6 +56,11 @@ class QuadTree {
                 throw new Error("Point not in sub trees");
             }
         };
+        this.addPoints = (pointList) => {
+            pointList.forEach(point => {
+                this.addPoint(point);
+            });
+        };
         this.doesIntersect = (rx1, ry1, rx2, ry2) => {
             let x1 = this.x;
             let x2 = this.x + this.width;
