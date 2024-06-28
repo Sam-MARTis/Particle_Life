@@ -8,13 +8,13 @@ const VISCOSITY = 1;
 const TREE_CAPACITY = 4;
 const DISTANCE_SCALE = 5;
 const BUFFER_SIZE = 1;
-const TIME_STEP = 0.01;
-const POINTS_COUNT = 700;
+const TIME_STEP = 0.1;
+const POINTS_COUNT = 500;
 const PARTICLE_SIZE = 5;
-const SEARCH_RANGE_MULTIPLIER = 50;
+const SEARCH_RANGE_MULTIPLIER = 10;
 const MAX_FORCE = 1;
 const MAX_VELOCITY = 0.1;
-const COLLISION_RANGE_MULTIPLIER = 3;
+const COLLISION_RANGE_MULTIPLIER = 2;
 const MASS_OF_PARTICLES = 100;
 class Arena {
     constructor(_x, _y, _width, _height, _viscosity, _objects = []) {
@@ -33,7 +33,14 @@ class Arena {
             }
         };
         this.updateAll = (dt) => {
-            this.tree = new QuadTree(0, 0, Math.max(this.width, this.height), Math.max(this.width, this.height), TREE_CAPACITY);
+            // this.tree = new QuadTree(
+            //   0,
+            //   0,
+            //   Math.max(this.width, this.height),
+            //   Math.max(this.width, this.height),
+            //   TREE_CAPACITY
+            // );
+            this.tree = new QuadTree(0, 0, this.width, this.height, TREE_CAPACITY);
             this.objects.forEach((point) => {
                 this.tree.addPoint(point);
             });
