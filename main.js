@@ -1,21 +1,34 @@
 "use strict";
-const INTERACTION_MATRIX = [
-    [1, 10],
-    [-10, 5],
-];
+const generateInteractionMatrix = (n) => {
+    const matrix = [];
+    for (let i = 0; i < n; i++) {
+        matrix.push([]);
+        for (let j = 0; j < n; j++) {
+            matrix[i].push(Math.random() * 100 * (Math.random() > 0.5 ? 1 : -1));
+        }
+    }
+    return matrix;
+};
+// const INTERACTION_MATRIX = [
+//   [1, 10, 5],
+//   [10, 1, 7],
+//   [10, -3, 1],
+// ];
+const INTERACTION_MATRIX = generateInteractionMatrix(6);
 const FORCE_MULTIPLIER = 0.1;
-const VISCOSITY = 1;
+const VISCOSITY = 5;
 const TREE_CAPACITY = 4;
 const DISTANCE_SCALE = 5;
-const BUFFER_SIZE = 1;
+const BUFFER_SIZE = 0.5;
 const TIME_STEP = 0.1;
-const POINTS_COUNT = 50;
-const PARTICLE_SIZE = 5;
-const SEARCH_RANGE_MULTIPLIER = 10;
+const POINTS_COUNT = 800;
+const PARTICLE_SIZE = [5, 5, 5, 5, 5, 5];
+const SEARCH_RANGE_MULTIPLIER = 40;
 const MAX_FORCE = 1;
 const MAX_VELOCITY = 0.1;
 const COLLISION_RANGE_MULTIPLIER = 2;
-const MASS_OF_PARTICLES = 100;
+const MASS_OF_PARTICLES = [1000, 1000, 100, 100, 100, 100];
+const COLOUR_ARRAY = ["red", "green", "blue", "yellow", "purple", "orange"];
 class Arena {
     constructor(_x, _y, _width, _height, _viscosity, _objects = []) {
         this.addPoint = (point) => {
@@ -27,14 +40,43 @@ class Arena {
             const y1 = point.y - SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE;
             const x2 = point.x + SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE;
             const y2 = point.y + SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE;
-            // if(x1<0){
-            //   if(y1<0){
-            //     const pointsToCheckForForce = this.tree.queryTree(0, 0, x2, y2);
-            //   }
-            //   else{
-            //   }
-            // }
-            const pointsToCheckForForce = this.tree.queryTree(x1, y1, x2, y2);
+            let pointsToCheckForForce = [];
+            if (x1 < 0) {
+                if (y1 < 0) {
+                    pointsToCheckForForce = this.tree
+                        .queryTree(0, 0, x2, y2)
+                        .concat(this.tree.queryTree(widthMain + x1, 0, widthMain, y2))
+                        .concat(this.tree.queryTree(0, heightMain + y1, x2, heightMain))
+                        .concat(this.tree.queryTree(widthMain + x1, heightMain + y1, widthMain, heightMain));
+                }
+                else {
+                    pointsToCheckForForce = this.tree
+                        .queryTree(0, y1, x2, y2)
+                        .concat(this.tree.queryTree(widthMain + x1, y1, widthMain, y2));
+                }
+            }
+            else if (y1 < 0) {
+                pointsToCheckForForce = this.tree
+                    .queryTree(x1, 0, x2, y2)
+                    .concat(this.tree.queryTree(x1, heightMain + y1, x2, heightMain));
+            }
+            else if (x2 > widthMain) {
+                if (y2 > heightMain) {
+                    pointsToCheckForForce = this.tree
+                        .queryTree(x1, y1, widthMain, heightMain)
+                        .concat(this.tree.queryTree(0, 0, x2 - widthMain, y2 - heightMain))
+                        .concat(this.tree.queryTree(x1, 0, widthMain, y2 - heightMain))
+                        .concat(this.tree.queryTree(0, y1, x2 - widthMain, heightMain));
+                }
+                else {
+                    pointsToCheckForForce = this.tree
+                        .queryTree(x1, y1, widthMain, y2)
+                        .concat(this.tree.queryTree(0, y1, x2 - widthMain, y2));
+                }
+            }
+            else {
+                pointsToCheckForForce = this.tree.queryTree(x1, y1, x2, y2);
+            }
             for (const other of pointsToCheckForForce) {
                 point.addForceInteractionOfParticle(other);
             }
@@ -79,12 +121,34 @@ class Point {
         this.addForceInteractionOfParticle = (other) => {
             const coefficient = this.interactionMatrix[this.type][other.type];
             let dx = other.x - this.x;
-            const dxVals = [dx - widthMain, dx, dx + widthMain];
-            dx = dxVals.reduce((min, current) => Math.abs(current) < Math.abs(min) ? current : min);
-            // const dx = Math.max(other.x - this.x, );
+            // const dxVals = [dx - widthMain, dx, dx + widthMain];
+            // for (let i = 0; i < dxVals.length; i++) {
+            //   if (Math.abs(dxVals[i]) < Math.abs(dx)) {
+            //     dx = dxVals[i];
+            //   }
+            // }
+            // // dx = dxVals.reduce((min, current) =>
+            // //   Math.abs(current) < Math.abs(min) ? current : min
+            // // );
+            // // const dx = Math.max(other.x - this.x, );
             let dy = other.y - this.y;
-            const dyVals = [dy - widthMain, dy, dy + widthMain];
-            dy = dyVals.reduce((min, current) => Math.abs(current) < Math.abs(min) ? current : min);
+            // const dyVals = [dy - widthMain, dy, dy + widthMain];
+            // for (let i = 0; i < dyVals.length; i++) {
+            //   if (Math.abs(dyVals[i]) < Math.abs(dy)) {
+            //     dy = dyVals[i];
+            //   }
+            // }
+            // // dy = dyVals.reduce((min, current) =>
+            // //   Math.abs(current) < Math.abs(min) ? current : min
+            // // );
+            if (dx > widthMain / 2)
+                dx -= widthMain;
+            if (dx < -widthMain / 2)
+                dx += widthMain;
+            if (dy > heightMain / 2)
+                dy -= heightMain;
+            if (dy < -heightMain / 2)
+                dy += heightMain;
             const distanceSquared = (dx ** 2 + dy ** 2) / this.distanceStep ** 2;
             if (distanceSquared == 0)
                 return;
@@ -123,20 +187,20 @@ class Point {
             this.x += this.vx * dt;
             this.y += this.vy * dt;
             if (this.x > widthMain) {
-                this.x = 0;
-                // this.vx *= -1;
+                this.x = 1;
+                this.vx += 0.1;
             }
             if (this.x < 0) {
-                this.x = widthMain - 1;
-                // this.vx *= -1;
+                this.x = widthMain - 2;
+                this.vx -= 0.1;
             }
             if (this.y > heightMain) {
-                this.y = 0;
-                // this.vy *= -1;
+                this.y = 1;
+                this.vy += 0.1;
             }
             if (this.y < 0) {
-                this.y = heightMain - 1;
-                // this.vy *= -1;
+                this.y = heightMain - 2;
+                this.vy -= 0.1;
             }
             // this.x = this.x<0?0:this.x;
             // this.y = this.y<0?0:this.y;
@@ -200,12 +264,12 @@ const drawTree = (tree) => {
 const renderFunction = () => {
     ctx.clearRect(0, 0, widthMain, heightMain);
     for (const point of pointsArray) {
-        ctx.fillStyle = point.type ? "green" : "red";
+        ctx.fillStyle = COLOUR_ARRAY[Math.floor(point.type)];
         ctx.beginPath();
         ctx.arc(point.x, point.y, point.size, 0, 2 * 3.1416);
         ctx.fill();
     }
-    drawTree(arena.tree);
+    // drawTree(arena.tree);
 };
 let timeNow = performance.now();
 const mainLoop = () => {
@@ -220,7 +284,8 @@ const setup = () => {
     //Add particles
     //Call animation to update particles
     for (let i = 0; i < POINTS_COUNT; i++) {
-        const pointNew = new Point(MASS_OF_PARTICLES, PARTICLE_SIZE, Math.random() * widthMain, Math.random() * heightMain, 0, 0, Math.round(Math.random()), arena, DISTANCE_SCALE, INTERACTION_MATRIX);
+        const pType = Math.floor(Math.random() * INTERACTION_MATRIX.length);
+        const pointNew = new Point(MASS_OF_PARTICLES[pType], PARTICLE_SIZE[pType], Math.random() * widthMain, Math.random() * heightMain, 0, 0, pType, arena, DISTANCE_SCALE, INTERACTION_MATRIX);
         arena.addPoint(pointNew);
         pointsArray.push(pointNew);
     }

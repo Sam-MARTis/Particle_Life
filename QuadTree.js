@@ -72,36 +72,34 @@ class QuadTree {
             //   return [...this.queryTree(rx1, ry1, rx2, this.y+(this.height-1)), ...this.queryTree(rx1, this.y, rx2, ry2-(this.height-1))]
             // }
             // else{
-            if (rx1 < this.x) {
-                return this.queryTree(this.x, ry1, rx2, ry2).concat(this.queryTree(rx1 + (this.width - 1), ry1, this.x + (this.width - 1), ry2));
+            //  if(rx1<this.x){
+            //   return this.queryTree(this.x, ry1, rx2, ry2).concat(this.queryTree(rx1+(this.width-1), ry1, this.x+(this.width-1), ry2))
+            // }
+            // if(ry1<this.y){
+            //   return this.queryTree(rx1, this.y, rx2, ry2).concat(this.queryTree(rx1, ry1+(this.height-1), rx2, this.y+(this.height-1)))
+            // } if(rx2>this.x+(this.width-1)){
+            //   return this.queryTree(rx1, ry1, this.x+(this.width-1), ry2).concat(this.queryTree(this.x, ry1, rx2-(this.width-1), ry2))
+            // }if(ry2>this.y+(this.height-1)){
+            //   return this.queryTree(rx1, ry1, rx2, this.y+(this.height-1)).concat(this.queryTree(rx1, this.y, rx2, ry2-(this.height-1)))
+            // }
+            // else{
+            if (!this.doesIntersect(rx1, ry1, rx2, ry2)) {
+                return [];
             }
-            if (ry1 < this.y) {
-                return this.queryTree(rx1, this.y, rx2, ry2).concat(this.queryTree(rx1, ry1 + (this.height - 1), rx2, this.y + (this.height - 1)));
-            }
-            if (rx2 > this.x + (this.width - 1)) {
-                return this.queryTree(rx1, ry1, this.x + (this.width - 1), ry2).concat(this.queryTree(this.x, ry1, rx2 - (this.width - 1), ry2));
-            }
-            if (ry2 > this.y + (this.height - 1)) {
-                return this.queryTree(rx1, ry1, rx2, this.y + (this.height - 1)).concat(this.queryTree(rx1, this.y, rx2, ry2 - (this.height - 1)));
-            }
-            else {
-                if (!this.doesIntersect(rx1, ry1, rx2, ry2)) {
-                    return [];
-                }
-                let pointsToReturn = [];
-                if (!this.divided) {
-                    this.points.forEach((point) => {
-                        if (point.x > rx1 && point.x < rx2 && point.y > ry1 && point.y < ry2) {
-                            pointsToReturn.push(point);
-                        }
-                    });
-                    return pointsToReturn;
-                }
-                this.subTrees.forEach((subtree) => {
-                    pointsToReturn.push(...subtree.queryTree(rx1, ry1, rx2, ry2));
+            let pointsToReturn = [];
+            if (!this.divided) {
+                this.points.forEach((point) => {
+                    if (point.x >= rx1 && point.x <= rx2 && point.y >= ry1 && point.y <= ry2) {
+                        pointsToReturn.push(point);
+                    }
                 });
                 return pointsToReturn;
             }
+            this.subTrees.forEach((subtree) => {
+                pointsToReturn.push(...subtree.queryTree(rx1, ry1, rx2, ry2));
+            });
+            return pointsToReturn;
+            // }
         };
         this.x = x;
         this.y = y;
