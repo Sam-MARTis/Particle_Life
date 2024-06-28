@@ -129,7 +129,7 @@ class QuadTree {
   };
 
   queryTree = (rx1: number, ry1: number, rx2: number, ry2: number): Point[] => {
-    // //In case of errors, try adding -1 to width and height
+    //In case of errors, try adding -1 to width and height
     // if(rx1<this.x){
     //   return [...this.queryTree(this.x, ry1, rx2, ry2), ...this.queryTree(rx1+(this.width-1), ry1, this.x+(this.width-1), ry2)]
     // }
@@ -141,6 +141,17 @@ class QuadTree {
     //   return [...this.queryTree(rx1, ry1, rx2, this.y+(this.height-1)), ...this.queryTree(rx1, this.y, rx2, ry2-(this.height-1))]
     // }
     // else{
+     if(rx1<this.x){
+      return this.queryTree(this.x, ry1, rx2, ry2).concat(this.queryTree(rx1+(this.width-1), ry1, this.x+(this.width-1), ry2))
+    }
+    if(ry1<this.y){
+      return this.queryTree(rx1, this.y, rx2, ry2).concat(this.queryTree(rx1, ry1+(this.height-1), rx2, this.y+(this.height-1)))
+    } if(rx2>this.x+(this.width-1)){
+      return this.queryTree(rx1, ry1, this.x+(this.width-1), ry2).concat(this.queryTree(this.x, ry1, rx2-(this.width-1), ry2))
+    }if(ry2>this.y+(this.height-1)){
+      return this.queryTree(rx1, ry1, rx2, this.y+(this.height-1)).concat(this.queryTree(rx1, this.y, rx2, ry2-(this.height-1)))
+    }
+    else{
 
     if (!this.doesIntersect(rx1, ry1, rx2, ry2)) {
       return [];
@@ -159,7 +170,7 @@ class QuadTree {
     });
 
     return pointsToReturn;
-  // }
+  }
   };
 }
 

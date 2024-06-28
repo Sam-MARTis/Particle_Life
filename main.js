@@ -9,7 +9,7 @@ const TREE_CAPACITY = 4;
 const DISTANCE_SCALE = 5;
 const BUFFER_SIZE = 1;
 const TIME_STEP = 0.1;
-const POINTS_COUNT = 500;
+const POINTS_COUNT = 50;
 const PARTICLE_SIZE = 5;
 const SEARCH_RANGE_MULTIPLIER = 10;
 const MAX_FORCE = 1;
@@ -27,6 +27,13 @@ class Arena {
             const y1 = point.y - SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE;
             const x2 = point.x + SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE;
             const y2 = point.y + SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE;
+            // if(x1<0){
+            //   if(y1<0){
+            //     const pointsToCheckForForce = this.tree.queryTree(0, 0, x2, y2);
+            //   }
+            //   else{
+            //   }
+            // }
             const pointsToCheckForForce = this.tree.queryTree(x1, y1, x2, y2);
             for (const other of pointsToCheckForForce) {
                 point.addForceInteractionOfParticle(other);
