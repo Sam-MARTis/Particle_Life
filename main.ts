@@ -4,11 +4,11 @@ const INTERACTION_MATRIX = [
 ];
 
 const FORCE_MULTIPLIER = 0.1;
-const VISCOSITY = 0;
+const VISCOSITY = 1;
 const TREE_CAPACITY = 4;
 const DISTANCE_SCALE = 5;
 const BUFFER_SIZE = 1;
-const TIME_STEP = 0.001;
+const TIME_STEP = 0.01;
 const POINTS_COUNT = 700;
 const PARTICLE_SIZE = 5;
 const SEARCH_RANGE_MULTIPLIER = 50;
@@ -58,21 +58,21 @@ class Arena {
     const y1 = point.y - SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE;
     const x2 = point.x + SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE;
     const y2 = point.y + SEARCH_RANGE_MULTIPLIER * DISTANCE_SCALE;
-    const pointsToCheckForForce = this.tree.queryTree(
-      x1,
-      y1, 
-      x2,
-      y2
-    );
-    
+    const pointsToCheckForForce = this.tree.queryTree(x1, y1, x2, y2);
+
     for (const other of pointsToCheckForForce) {
       point.addForceInteractionOfParticle(other);
     }
   };
 
   updateAll = (dt: number): void => {
-    
-    this.tree = new QuadTree(0, 0, Math.max(this.width, this.height), Math.max(this.width,this.height), TREE_CAPACITY);
+    this.tree = new QuadTree(
+      0,
+      0,
+      Math.max(this.width, this.height),
+      Math.max(this.width, this.height),
+      TREE_CAPACITY
+    );
     this.objects.forEach((point) => {
       this.tree.addPoint(point);
     });
@@ -89,12 +89,11 @@ class Arena {
         point.x + 2 * point.size,
         point.y + 2 * point.size
       );
-      
-      pointsToCheckForCollision.forEach((other) =>{
-        point.handleCollision(other);
-      })
-    })
 
+      pointsToCheckForCollision.forEach((other) => {
+        point.handleCollision(other);
+      });
+    });
   };
 }
 
@@ -139,14 +138,14 @@ class Point {
   addForceInteractionOfParticle = (other: Point): void => {
     const coefficient = this.interactionMatrix[this.type][other.type];
     let dx = other.x - this.x;
-    const dxVals = [dx-widthMain, dx, dx+widthMain];
-    dx = dxVals.reduce((min, current) => 
+    const dxVals = [dx - widthMain, dx, dx + widthMain];
+    dx = dxVals.reduce((min, current) =>
       Math.abs(current) < Math.abs(min) ? current : min
     );
     // const dx = Math.max(other.x - this.x, );
     let dy = other.y - this.y;
-    const dyVals = [dy-widthMain, dy, dy+widthMain];
-    dy = dyVals.reduce((min, current) => 
+    const dyVals = [dy - widthMain, dy, dy + widthMain];
+    dy = dyVals.reduce((min, current) =>
       Math.abs(current) < Math.abs(min) ? current : min
     );
     const distanceSquared = (dx ** 2 + dy ** 2) / this.distanceStep ** 2;
@@ -166,7 +165,7 @@ class Point {
     this.force[1] -= this.vy * VISCOSITY;
     this.vx += (this.force[0] * dt) / this.mass;
     this.vy += (this.force[1] * dt) / this.mass;
-    if(this.vx**2 + this.vy**2 > MAX_VELOCITY**2){
+    if (this.vx ** 2 + this.vy ** 2 > MAX_VELOCITY ** 2) {
       const angle = Math.atan2(this.vy, this.vx);
       this.vx = MAX_VELOCITY * Math.cos(angle);
       this.vy = MAX_VELOCITY * Math.sin(angle);
@@ -187,8 +186,8 @@ class Point {
     // this.x += (this.vx / 2) * dt;
     // this.y += (this.vy / 2) * dt;
 
-    this.x += (this.vx ) * dt;
-    this.y += (this.vy ) * dt;
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
     if (this.x > widthMain) {
       this.x = 0;
       // this.vx *= -1;
@@ -197,7 +196,7 @@ class Point {
       this.x = widthMain - 1;
       // this.vx *= -1;
     }
-    if (this.y > heightMain ) {
+    if (this.y > heightMain) {
       this.y = 0;
       // this.vy *= -1;
     }
@@ -219,13 +218,13 @@ class Point {
     const dy = other.y - this.y;
     const distanceSquared = dx ** 2 + dy ** 2;
     if (distanceSquared == 0) return;
-    if (distanceSquared <= ((this.size + other.size + 2) ** 2)){
+    if (distanceSquared <= (this.size + other.size + 2) ** 2) {
       const angle = Math.atan2(dy, dx);
-      const overlap = 2*this.size - Math.sqrt(distanceSquared) + BUFFER_SIZE;
-      this.x -= 0.5*(overlap * Math.cos(angle));
-      this.y -= 0.5*(overlap * Math.sin(angle));
-      other.x +=0.5* (overlap * Math.cos(angle));
-      other.y +=0.5* (overlap * Math.sin(angle));
+      const overlap = 2 * this.size - Math.sqrt(distanceSquared) + BUFFER_SIZE;
+      this.x -= 0.5 * (overlap * Math.cos(angle));
+      this.y -= 0.5 * (overlap * Math.sin(angle));
+      other.x += 0.5 * (overlap * Math.cos(angle));
+      other.y += 0.5 * (overlap * Math.sin(angle));
     }
   };
 }
@@ -271,7 +270,7 @@ const renderFunction = () => {
 let timeNow = performance.now();
 const mainLoop = (): void => {
   const newTime = performance.now();
-  arena.updateAll(newTime - timeNow);
+  arena.updateAll((newTime - timeNow)/2);
   timeNow = newTime;
   renderFunction();
   requestAnimationFrame(mainLoop);

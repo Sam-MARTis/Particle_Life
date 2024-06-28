@@ -4,11 +4,11 @@ const INTERACTION_MATRIX = [
     [-10, 5],
 ];
 const FORCE_MULTIPLIER = 0.1;
-const VISCOSITY = 0;
+const VISCOSITY = 1;
 const TREE_CAPACITY = 4;
 const DISTANCE_SCALE = 5;
 const BUFFER_SIZE = 1;
-const TIME_STEP = 0.001;
+const TIME_STEP = 0.01;
 const POINTS_COUNT = 700;
 const PARTICLE_SIZE = 5;
 const SEARCH_RANGE_MULTIPLIER = 50;
@@ -106,8 +106,8 @@ class Point {
             // }
             // this.x += (this.vx / 2) * dt;
             // this.y += (this.vy / 2) * dt;
-            this.x += (this.vx) * dt;
-            this.y += (this.vy) * dt;
+            this.x += this.vx * dt;
+            this.y += this.vy * dt;
             if (this.x > widthMain) {
                 this.x = 0;
                 // this.vx *= -1;
@@ -136,7 +136,7 @@ class Point {
             const distanceSquared = dx ** 2 + dy ** 2;
             if (distanceSquared == 0)
                 return;
-            if (distanceSquared <= ((this.size + other.size + 2) ** 2)) {
+            if (distanceSquared <= (this.size + other.size + 2) ** 2) {
                 const angle = Math.atan2(dy, dx);
                 const overlap = 2 * this.size - Math.sqrt(distanceSquared) + BUFFER_SIZE;
                 this.x -= 0.5 * (overlap * Math.cos(angle));
@@ -196,7 +196,7 @@ const renderFunction = () => {
 let timeNow = performance.now();
 const mainLoop = () => {
     const newTime = performance.now();
-    arena.updateAll(newTime - timeNow);
+    arena.updateAll((newTime - timeNow) / 2);
     timeNow = newTime;
     renderFunction();
     requestAnimationFrame(mainLoop);
